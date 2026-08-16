@@ -24,6 +24,132 @@
     <link href="assets/css/solid.min.css" rel="stylesheet">
     <link href="assets/css/bootstrap.min.css" rel="stylesheet">
     <link href="assets/css/aseprite.css?v=40" rel="stylesheet">
+  <style>
+    /* ── Header Restyling ──────────────────────────────────────────── */
+    .header {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(135deg, #0d0d1a 0%, #1a1030 40%, #0d1a2a 100%);
+      padding: 80px 0 60px;
+      border-bottom: 2px solid rgba(120, 80, 255, 0.4);
+      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.7);
+    }
+
+    .header::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 20% 50%, rgba(100, 60, 255, 0.15) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 30%, rgba(0, 180, 255, 0.1) 0%, transparent 55%);
+      pointer-events: none;
+    }
+
+    .header-inner {
+      position: relative;
+      z-index: 1;
+    }
+
+    .header-inner .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+    }
+
+    /* ── 3-D Logo ──────────────────────────────────────────────────── */
+    .header-logo-wrapper {
+      perspective: 600px;
+      display: inline-block;
+      cursor: default;
+    }
+
+    .header-logo {
+      display: block;
+      transform-style: preserve-3d;
+      transform: rotateX(0deg) rotateY(0deg) scale(1);
+      transition: transform 0.08s linear;
+      filter:
+        drop-shadow(0 4px 24px rgba(120, 80, 255, 0.55))
+        drop-shadow(0 0 8px rgba(0, 200, 255, 0.3));
+      will-change: transform;
+    }
+
+    /* ── Sparkle / Shine sweep ─────────────────────────────────────── */
+    .header-logo-wrapper {
+      position: relative;
+    }
+
+    .header-logo-wrapper::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 4px;
+      background: linear-gradient(
+        120deg,
+        transparent 0%,
+        transparent 30%,
+        rgba(255, 255, 255, 0.55) 50%,
+        rgba(180, 160, 255, 0.3) 55%,
+        transparent 70%,
+        transparent 100%
+      );
+      background-size: 250% 100%;
+      background-position: 200% 0;
+      animation: logoShine 6s ease-in-out infinite;
+      pointer-events: none;
+      mix-blend-mode: screen;
+    }
+
+    @keyframes logoShine {
+      0%   { background-position: 200% 0; opacity: 0; }
+      5%   { opacity: 1; }
+      35%  { background-position: -50% 0; opacity: 1; }
+      40%  { opacity: 0; }
+      100% { background-position: -50% 0; opacity: 0; }
+    }
+
+    /* Random sparkle dots */
+    @keyframes sparklePop {
+      0%   { transform: scale(0) rotate(0deg);   opacity: 0; }
+      40%  { transform: scale(1.2) rotate(45deg); opacity: 1; }
+      100% { transform: scale(0) rotate(90deg);  opacity: 0; }
+    }
+
+    .sparkle-dot {
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #fff 0%, rgba(180,120,255,0.8) 60%, transparent 100%);
+      pointer-events: none;
+      animation: sparklePop 1.2s ease-in-out both;
+      box-shadow: 0 0 6px 2px rgba(200,160,255,0.7);
+    }
+
+    /* ── Navbar Restyling ──────────────────────────────────────────── */
+    .navbar-default {
+      background: rgba(10, 8, 20, 0.92) !important;
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(100, 70, 220, 0.35) !important;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.6) !important;
+    }
+
+    .navbar-default .nav > li > a {
+      color: rgba(200, 190, 255, 0.85) !important;
+      letter-spacing: 0.04em;
+      transition: color 0.2s, text-shadow 0.2s;
+    }
+
+    .navbar-default .nav > li > a:hover {
+      color: #fff !important;
+      text-shadow: 0 0 12px rgba(140, 100, 255, 0.9);
+    }
+
+    .navbar-default .navbar-brand {
+      filter: drop-shadow(0 0 6px rgba(120, 80, 255, 0.6));
+    }
+  </style>
   </head>
 
   <body>
@@ -54,10 +180,11 @@
 
 <div class="top-shadow"></div>
 <div class="header">
-  <div class="header-inner" data-parallax="scroll" data-image-src="assets/images/header-bg.png">
+  <div class="header-inner">
 	<div class="container">
-	  <img class="header-logo" src="assets/images/header-logo.png" alt="Aseprite">
-	  <img class="header-title" src="assets/images/header-title.png" alt="Animated Sprite Editor &amp; Pixel Art Tool">
+	  <div class="header-logo-wrapper" id="logoWrapper">
+	    <img class="header-logo" id="headerLogo" src="assets/images/header-logo.png" alt="Aseprite">
+	  </div>
 	</div>
   </div>
 </div>
@@ -308,6 +435,65 @@
     </div>
     </div> <!-- /#footer -->
 
+<script>
+(function () {
+  var wrapper = document.getElementById('logoWrapper');
+  var logo    = document.getElementById('headerLogo');
+  if (!wrapper || !logo) return;
+
+  var MAX_TILT = 18;   // degrees
+  var RADIUS   = 320;  // px — influence radius
+
+  document.addEventListener('mousemove', function (e) {
+    var rect = wrapper.getBoundingClientRect();
+    var cx = rect.left + rect.width  / 2;
+    var cy = rect.top  + rect.height / 2;
+    var dx = e.clientX - cx;
+    var dy = e.clientY - cy;
+    var dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (dist > RADIUS) {
+      logo.style.transform = 'rotateX(0deg) rotateY(0deg) scale(1)';
+      return;
+    }
+
+    var factor = 1 - dist / RADIUS;
+    var tiltY  =  (dx / (rect.width  / 2)) * MAX_TILT * factor;
+    var tiltX  = -(dy / (rect.height / 2)) * MAX_TILT * factor;
+    var scl    = 1 + 0.04 * factor;
+    logo.style.transform =
+      'rotateX(' + tiltX + 'deg) rotateY(' + tiltY + 'deg) scale(' + scl + ')';
+  });
+
+  document.addEventListener('mouseleave', function () {
+    logo.style.transform = 'rotateX(0deg) rotateY(0deg) scale(1)';
+  });
+
+  /* Periodic sparkle dots */
+  function randomBetween(a, b) { return a + Math.random() * (b - a); }
+
+  function spawnSparkle() {
+    var dot = document.createElement('span');
+    dot.className = 'sparkle-dot';
+    dot.style.left = randomBetween(5, 95) + '%';
+    dot.style.top  = randomBetween(5, 90) + '%';
+    dot.style.animationDelay = randomBetween(0, 0.3) + 's';
+    wrapper.appendChild(dot);
+    setTimeout(function () { dot.remove(); }, 1600);
+  }
+
+  function sparkleGroup() {
+    var count = Math.floor(randomBetween(3, 8));
+    for (var i = 0; i < count; i++) {
+      setTimeout(spawnSparkle, i * 120);
+    }
+    /* next group between 4 – 9 s */
+    setTimeout(sparkleGroup, randomBetween(4000, 9000));
+  }
+
+  setTimeout(sparkleGroup, 1500);
+})();
+</script>
     <script src="assets/js/jquery.min.js"></script>
     <script src="assets/js/bootstrap.min.js"></script>
 
